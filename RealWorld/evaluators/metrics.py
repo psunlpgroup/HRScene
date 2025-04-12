@@ -3,19 +3,19 @@ from typing import List
 from .utils import clean_response, realworld_parse
 
 
-def default_realworld_metrics(responses: List[dict], labels: List[dict]) -> dict:
+def default_realworld_metrics(responses: List[dict]) -> dict:
     eval_results = []
 
-    for response, label in zip(responses, labels):
+    for response in responses:
         prediction = realworld_parse(response["response"])
-        score = int(prediction == label)
+        score = int(prediction == response["answer"])
 
         eval_results.append({
-            "id": response["metadata"]["id"],
-            "question": response["metadata"]["question"],
+            "id": response["id"],
+            "question": response["question"],
             "response": response["response"],
             "parsed_response": prediction,
-            "answer": label,
+            "answer": response["answer"],
             "score": score
         })
 
