@@ -13,13 +13,22 @@ from tqdm import tqdm
 
 
 class RealWorldTester(BaseTester):
-    def __init__(self, model: BaseModel, dataset_name: str, split: str, num_samples: int = 10000) -> None:
+    def __init__(
+            self, model: BaseModel, dataset_name: str, split: str, num_samples: int = 10000, cache_dir: str | None = None
+        ) -> None:
         super().__init__(model, dataset_name, split, num_samples)
         self.model_name = getattr(self.model, "MODEL_NAME", "Custom Model")
         self.experiment_name = f"RealWorld {self.model_name}"
-        self.save_dir = os.path.join("results", "realworld", time.strftime("%Y%m%d_%H%M%S"))
-        os.makedirs(self.save_dir, exist_ok=True)
-        print(f"Results will be saved in: {self.save_dir}")
+        if cache_dir and os.path.exists(os.path.join(cache_dir, "responses.jsonl")):
+            self.save_dir = cache_dir
+            self.finished_items = set(
+                [json.loads(line)["id"] for line in open(os.path.join(cache_dir, "responses.jsonl"), "r")]
+            )
+        else:
+            self.save_dir = os.path.join("results", "realworld", time.strftime("%Y%m%d_%H%M%S"))
+            self.finished_items = set()
+            os.makedirs(self.save_dir, exist_ok=True)
+            print(f"Results will be saved in: {self.save_dir}")
 
 
     def _init_dataset(self, dataset_name: str, split: str) -> None:
@@ -28,17 +37,11 @@ class RealWorldTester(BaseTester):
         self.num_samples = min(len(self.dataset), self.num_samples)
 
 
-    def run(self, cache_dir: str | None = None, **generation_kwargs) -> None:
-        if cache_dir and os.path.exists(os.path.join(cache_dir, "responses.jsonl")):
-            with open(os.path.join(cache_dir, "responses.jsonl"), "r") as f:
-                finished_items = set([json.loads(line)["metadata"]["id"] for line in f])
-        else:
-            finished_items = set()
-
+    def run(self, **generation_kwargs) -> None:
         for i, sample in tqdm(enumerate(self.dataset), total=self.num_samples, desc='Inferencing RealWorld'):
             if i >= self.num_samples:
                 break
-            if sample["id"] in finished_items:
+            if sample["id"] in self.finished_items:
                 continue
             prompt_template = getattr(importlib.import_module("prompts"), f"realworld_prompt")()
             prompt = prompt_template.format(question=sample["question"])

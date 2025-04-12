@@ -13,13 +13,22 @@ from tqdm import tqdm
 
 
 class DiagnosisTester(BaseTester):
-    def __init__(self, model: BaseModel, dataset_name: str, num_samples: int = 500) -> None:
+    def __init__(
+            self, model: BaseModel, dataset_name: str, num_samples: int = 500, cache_dir: str | None = None
+        ) -> None:
         super().__init__(model, dataset_name, num_samples)
         self.model_name = getattr(self.model, "MODEL_NAME", "Custom Model")
         self.experiment_name = f"{self.task} {self.model_name} {self.grid_size}x{self.grid_size}"
-        self.save_dir = os.path.join("results", "diagnosis", time.strftime("%Y%m%d_%H%M%S"))
-        os.makedirs(self.save_dir, exist_ok=True)
-        print(f"Results will be saved in: {self.save_dir}")
+        if cache_dir and os.path.exists(os.path.join(cache_dir, "responses.jsonl")):
+            self.save_dir = cache_dir
+            self.finished_items = set(
+                [json.loads(line)["id"] for line in open(os.path.join(cache_dir, "responses.jsonl"), "r")]
+            )
+        else:
+            self.save_dir = os.path.join("results", "diagnosis", time.strftime("%Y%m%d_%H%M%S"))
+            self.finished_items = set()
+            os.makedirs(self.save_dir, exist_ok=True)
+            print(f"Results will be saved in: {self.save_dir}")
     
 
     def _init_dataset(self, dataset_name: str) -> None:
@@ -27,17 +36,11 @@ class DiagnosisTester(BaseTester):
         self.dataset = self.dataset['test']
 
 
-    def run(self, cache_dir: str | None = None, **generation_kwargs) -> None:
-        if cache_dir and os.path.exists(os.path.join(cache_dir, "responses.jsonl")):
-            with open(os.path.join(cache_dir, "responses.jsonl"), "r") as f:
-                finished_items = set([json.loads(line)["metadata"]["id"] for line in f])
-        else:
-            finished_items = set()
-
+    def run(self, **generation_kwargs) -> None:
         for i, sample in tqdm(enumerate(self.dataset), total=self.num_samples, desc=self.experiment_name):
             if i >= self.num_samples:
                 break
-            if sample["id"] in finished_items:
+            if sample["id"] in self.finished_items:
                 continue
             prompt_template = getattr(importlib.import_module("prompts"), f"{self.task}_prompt")()
             if self.task == "whitebackground":
@@ -79,12 +82,20 @@ class DiagnosisTester(BaseTester):
         metrics = getattr(importlib.import_module("evaluators"), f"default_{self.task}_metrics")
 
         with open(os.path.join(self.save_dir, "responses.jsonl"), "r") as f:
-            responses = [{
-                "id": json.loads(line)["id"],
-                "question": json.loads(line)["question"],
-                "response": json.loads(line)["response"],
-                "answer": json.loads(line)["answer"]
-            } for line in f]
+            if self.task == "whitebackground":
+                responses = [{
+                    "id": json.loads(line)["id"],
+                    "question": json.loads(line)["question"],
+                    "response": json.loads(line)["response"],
+                    "answer": json.loads(line)["answer"]
+                } for line in f]
+            elif self.task == "complexgrid":
+                responses = [{
+                    "id": json.loads(line)["id"],
+                    "caption": json.loads(line)["caption"],
+                    "response": json.loads(line)["response"],
+                    "answer": json.loads(line)["answer"]
+                } for line in f]
         eval_results = metrics(responses)
         scores = np.array([result["score"] for result in eval_results])
         
