@@ -20,10 +20,19 @@ class Llama32(BaseModel):
     
 
     def process_inputs(self, inputs: dict) -> dict:
-        image = inputs["image"]
-        prompt = f"<|image|><|begin_of_text|>{inputs['prompt']}"
-
-        inputs = self.processor(image, prompt, return_tensors="pt").to(self.device)
+        messages = [
+            {"role": "user", "content": [
+                {"type": "image"},
+                {"type": "text", "text": inputs["prompt"]}
+            ]}
+        ]
+        input_text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
+        inputs = self.processor(
+            inputs["image"],
+            input_text,
+            add_special_tokens=False,
+            return_tensors="pt"
+        ).to(self.device)
 
         return inputs
 
