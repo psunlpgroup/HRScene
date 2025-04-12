@@ -214,7 +214,7 @@ Finished evaluation for experiment: complexgrid Llama32 3x3
 Example heatmap:
 
 <p align="center">
-    <img src="example_images/complexgrid Llama32 3x3.png"> <br>
+    <img src="example_images/complexgrid Llama32 5x5.png"> <br>
 </p>
 
 Example JSON evaluation results:
