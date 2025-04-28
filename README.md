@@ -3,7 +3,7 @@
 <div align="center">
 <a href="https://yszh8.github.io/hrscene/" target="_blank"><img src=https://img.shields.io/badge/Website-8A2BE2></a>
 <a href="https://huggingface.co/datasets/Wenliang04/HRScene" target="_blank"><img src=https://img.shields.io/badge/🤗Dataset-HRScene-yellow></a>
-<a href="https://arxiv.org/abs/2412.09722" target="_blank"><img src=https://img.shields.io/badge/arXiv-2412.09722-b31b1b.svg></a>
+<a href="https://arxiv.org/pdf/2504.18406" target="_blank"><img src=https://img.shields.io/badge/arXiv-2412.09722-b31b1b.svg></a>
 <a href="https://eval.ai/web/challenges/challenge-page/2501/overview" target="_blank"><img src=https://img.shields.io/badge/EvalAI-Leaderboard-blue></a>
 <a href="https://github.com/psunlpgroup/HRScene/issues" target="_blank"><img src=https://img.shields.io/github/issues-pr/psunlpgroup/HRScene></a>
 <a href="https://github.com/psunlpgroup/HRScene/pulls" target="_blank"><img src=https://img.shields.io/github/issues/psunlpgroup/HRScene></a>
